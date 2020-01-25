@@ -6,13 +6,13 @@ import { DynamicTabsDirective } from './dynamic-tabs.directive';
 import { TabComponent } from '../tab/tab.component';
 import { DataService, Technique } from '../data.service'; //import the DataService component so we can use it
 import { ConfigService } from '../config.service';
-import { DataTableComponent} from '../datatable/data-table.component';
+import { DataTableComponent } from '../datatable/data-table.component';
 import { ExportData } from "../exporter/exporter.component";
 
 import { ViewModelsService, ViewModel, TechniqueVM, Gradient, Gcolor } from "../viewmodels.service";
 
-import {ErrorStateMatcher} from '@angular/material/core'
-import {FormControl} from '@angular/forms';
+import { ErrorStateMatcher } from '@angular/material/core'
+import { FormControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import * as globals from './../globals';
 import { log } from 'util';
@@ -36,10 +36,10 @@ export class TabsComponent implements AfterContentInit {
 
     // these variables refer to the templates of the same name defined in the HTML.
     // to open a tab use one of these variables as the template variable.
-    @ViewChild('blankTab', {static: false}) blankTab;
-    @ViewChild('layerTab', {static: false}) layerTab;
-    @ViewChild('helpTab', {static: true}) helpTab;
-    @ViewChild('exporterTab', {static: false}) exporterTab;
+    @ViewChild('blankTab', { static: false }) blankTab;
+    @ViewChild('layerTab', { static: false }) layerTab;
+    @ViewChild('helpTab', { static: true }) helpTab;
+    @ViewChild('exporterTab', { static: false }) exporterTab;
 
     ds: DataService = null;
     vms: ViewModelsService = null;
@@ -48,10 +48,11 @@ export class TabsComponent implements AfterContentInit {
         let self = this;
         this.ds = dataService;
         this.viewModelsService = viewModelsService;
+
     }
 
     dynamicTabs: TabComponent[] = [];
-    @ViewChild(DynamicTabsDirective, {static: false}) dynamicTabPlaceholder: DynamicTabsDirective;
+    @ViewChild(DynamicTabsDirective, { static: false }) dynamicTabPlaceholder: DynamicTabsDirective;
 
 
     ngAfterContentInit() {
@@ -68,7 +69,7 @@ export class TabsComponent implements AfterContentInit {
                     replace = false;
                 }
                 if (this.dynamicTabs.length == 0) this.newLayer(); // failed load from url, so create new blank layer
-            } else if (config["default_layers"]["enabled"]){
+            } else if (config["default_layers"]["enabled"]) {
                 let first = true;
                 for (let url of config["default_layers"]["urls"]) {
                     console.log(url);
@@ -82,14 +83,21 @@ export class TabsComponent implements AfterContentInit {
             } else {
                 this.newLayer();
             }
-            let activeTabs = this.dynamicTabs.filter((tab)=>tab.active);
+            let activeTabs = this.dynamicTabs.filter((tab) => tab.active);
 
             // if there is no active tab set, activate the first
-            if(activeTabs.length === 0) {
+            if (activeTabs.length === 0) {
                 this.selectTab(this.dynamicTabs[0]);
             }
 
-            this.customizedConfig = this.configService.getFeatureList()
+            this.customizedConfig = this.configService.getFeatureList();
+            
+            // Load all layers from the global store
+            this.http.get('layers').subscribe((res: Array<String>) => {
+                res.forEach(matrix => {
+                    this.loadLayerFromURL('layer/' + matrix, false);
+                });
+            })
         });
     }
 
@@ -152,7 +160,7 @@ export class TabsComponent implements AfterContentInit {
             for (let i = 0; i < this.dynamicTabs.length; i++) {
                 if (this.dynamicTabs[i].active) {
                     this.closeActiveTab(true) //close current and don't let it create a replacement tab
-                    this.dynamicTabs.splice(i,0,componentRef.instance as TabComponent) //replace
+                    this.dynamicTabs.splice(i, 0, componentRef.instance as TabComponent) //replace
                     this.selectTab(this.dynamicTabs[i]);
                     return
                 }
@@ -165,7 +173,7 @@ export class TabsComponent implements AfterContentInit {
      * Select a given tab: deselects other tabs.
      * @param  {TabComponent} tab tab to select
      */
-    selectTab(tab: TabComponent){
+    selectTab(tab: TabComponent) {
         // deactivate all tabs
         this.dynamicTabs.forEach(tab => tab.active = false);
 
@@ -178,14 +186,14 @@ export class TabsComponent implements AfterContentInit {
      * @param  {TabComponent} tab              tab to close
      * @param  {[type]}       allowNoTab=false if true, doesn't select another tab, and won't open a new tab if there are none
      */
-    closeTab(tab: TabComponent, allowNoTab=false) {
+    closeTab(tab: TabComponent, allowNoTab = false) {
         let action = 0; //controls post close-tab behavior
 
         // destroy tab viewmodel
         this.viewModelsService.destroyViewModel(tab.dataContext);
 
-        for(let i=0; i<this.dynamicTabs.length;i++) {
-            if(this.dynamicTabs[i] === tab) { //close this tab
+        for (let i = 0; i < this.dynamicTabs.length; i++) {
+            if (this.dynamicTabs[i] === tab) { //close this tab
 
                 if (this.dynamicTabs[i].active) { //is the tab we're closing currently open??
                     if (i == 0 && this.dynamicTabs.length > 1) { //closing first tab, first tab is active, and more tabs exist
@@ -198,7 +206,7 @@ export class TabsComponent implements AfterContentInit {
                 }
 
                 // remove the tab from our array
-                this.dynamicTabs.splice(i,1);
+                this.dynamicTabs.splice(i, 1);
 
                 // destroy our dynamically created component again
                 let viewContainerRef = this.dynamicTabPlaceholder.viewContainer;
@@ -232,16 +240,16 @@ export class TabsComponent implements AfterContentInit {
      * Close the currently selected tab
      * @param  {[type]} allowNoTab=false if true, doesn't select another tab, and won't open a new tab if there are none
      */
-    closeActiveTab(allowNoTab=false) {
-        let activeTabs = this.dynamicTabs.filter((tab)=>tab.active);
-        if(activeTabs.length > 0)  {
+    closeActiveTab(allowNoTab = false) {
+        let activeTabs = this.dynamicTabs.filter((tab) => tab.active);
+        if (activeTabs.length > 0) {
             // close the 1st active tab (should only be one at a time)
             this.closeTab(activeTabs[0], allowNoTab);
         }
     }
 
     getActiveTab() {
-        let activeTabs = this.dynamicTabs.filter((tab)=>tab.active);
+        let activeTabs = this.dynamicTabs.filter((tab) => tab.active);
         return activeTabs[0];
     }
 
@@ -255,7 +263,7 @@ export class TabsComponent implements AfterContentInit {
      * open a new "blank" tab showing a new layer button and an open layer button
      * @param  {[type]} replace=false replace the current tab with this blank tab?
      */
-    newBlankTab(replace=false) {
+    newBlankTab(replace = false) {
         this.openTab('new tab', this.blankTab, null, true, replace, true, false)
     }
 
@@ -264,7 +272,7 @@ export class TabsComponent implements AfterContentInit {
      * @param replace=false  replace currently open tab?
      * @param forceNew=false if false, select currently open help tab if possible
      */
-    newHelpTab(replace=false, forceNew=false): void {
+    newHelpTab(replace = false, forceNew = false): void {
         if (replace) this.closeActiveTab()
         this.openTab('help', this.helpTab, null, true, replace, false)
     }
@@ -328,7 +336,7 @@ export class TabsComponent implements AfterContentInit {
         for (let i = 0; i < index; i++) {
             if (this.dynamicTabs[i].dataContext) realIndex++;
         }
-        return String.fromCharCode(97+realIndex);
+        return String.fromCharCode(97 + realIndex);
     }
 
     /**
@@ -341,7 +349,7 @@ export class TabsComponent implements AfterContentInit {
         let realIndex = 0;
         for (let i = 0; i < this.dynamicTabs.length; i++) {
             if (this.dynamicTabs[i].dataContext) {
-                let charHere = String.fromCharCode(97+realIndex);
+                let charHere = String.fromCharCode(97 + realIndex);
                 // console.log(charHere, this.dynamicTabs[i].dataContext.name)
                 realIndex++;
                 if (charHere == char) return i;
@@ -365,7 +373,7 @@ export class TabsComponent implements AfterContentInit {
         let matches = this.scoreExpression.match(regex);
         let self = this;
         if (matches) {
-            matches.forEach(function(match) {
+            matches.forEach(function (match) {
                 // trim
                 let index = self.charToIndex(match);
                 // console.log(match, index)
@@ -401,12 +409,12 @@ export class TabsComponent implements AfterContentInit {
             let scope = {}
             if (matches) {
                 let noMatch = ""
-                matches.forEach(function(match) {
+                matches.forEach(function (match) {
                     // trim
                     scope[match] = 0;
                     // check if letter is too large
                     // console.log("chartoindex["+match+"]", self.charToIndex(match))
-                    if (typeof(self.charToIndex(match)) == "undefined") {
+                    if (typeof (self.charToIndex(match)) == "undefined") {
                         noMatch = "Variable " + match + " does not match any layers"
                     }
                 });
@@ -416,7 +424,7 @@ export class TabsComponent implements AfterContentInit {
             let result = math.eval(self.scoreExpression, scope)
             // console.log(result)
             return null
-        } catch(err) {
+        } catch (err) {
             // console.log(err.message)
             return err.message
         }
@@ -435,7 +443,7 @@ export class TabsComponent implements AfterContentInit {
      */
     loadLayerFromFile(): void {
         var input = (<HTMLInputElement>document.getElementById("uploader"));
-        if(input.files.length < 1){
+        if (input.files.length < 1) {
             alert("You must select a file to upload!")
             return;
         }
@@ -452,13 +460,13 @@ export class TabsComponent implements AfterContentInit {
         var reader = new FileReader();
         let viewModel = this.viewModelsService.newViewModel("loading layer...");
 
-        reader.onload = (e) =>{
+        reader.onload = (e) => {
             var string = String(reader.result);
-            try{
+            try {
                 viewModel.deSerialize(string)
                 this.openTab("new layer", this.layerTab, viewModel, true, true, true, true)
             }
-            catch(err){
+            catch (err) {
                 console.error("ERROR: Either the file is not JSON formatted, or the file structure is invalid.", err);
                 alert("ERROR: Either the file is not JSON formatted, or the file structure is invalid.");
                 this.viewModelsService.destroyViewModel(viewModel)
@@ -480,7 +488,7 @@ export class TabsComponent implements AfterContentInit {
                 viewModel.deSerialize(res)
                 console.log("loaded layer from", loadURL);
                 this.openTab("new layer", this.layerTab, viewModel, true, replace, true, true)
-            } catch(err) {
+            } catch (err) {
                 console.error(err)
                 alert("ERROR parsing layer from " + loadURL + ", check the javascript console for more information.")
                 this.viewModelsService.destroyViewModel(viewModel)
@@ -578,7 +586,7 @@ export class TabsComponent implements AfterContentInit {
         document.execCommand("Copy");
         this.copiedRecently = true;
         let self = this;
-        window.setTimeout(function() {self.copiedRecently = false}, 2000);
+        window.setTimeout(function () { self.copiedRecently = false }, 2000);
     }
 
     /**

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpHeaders } from '@angular/common/http'
+
 // import { Http } from '@angular/http'
 import { Observable } from "rxjs/Rx"
 import { fromPromise } from 'rxjs/observable/fromPromise';
@@ -8,7 +9,7 @@ import { TaxiiConnect, Server, Collections, Collection, Status } from './taxii2l
 @Injectable()
 export class DataService {
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient) { }
 
     // Observable for data in config.json
     private configData$: Observable<Object>;
@@ -23,15 +24,15 @@ export class DataService {
     private totalTacticsOrder: String[] = [];
 
     // URLs in case config file doesn't load properly
-    private enterpriseAttackURL: string = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json";
-    private pre_attack_URL: string = "https://raw.githubusercontent.com/mitre/cti/master/pre-attack/pre-attack.json";
-    private mobileDataURL: string = "https://raw.githubusercontent.com/mitre/cti/master/mobile-attack/mobile-attack.json";
+    private enterpriseAttackURL: string = "assets/enterprise-attack.json";
+    private pre_attack_URL: string = "assets/pre-attack.json";
+    private mobileDataURL: string = "assets/mobile-attack.json";
 
     private useTAXIIServer: boolean = false;
     private taxiiURL: string = '';
     private taxiiCollections: String[] = [];
 
-    setUpURLs(eAttackURL, preAttackURL, mURL, useTAXIIServer, taxiiURL, taxiiCollections){
+    setUpURLs(eAttackURL, preAttackURL, mURL, useTAXIIServer, taxiiURL, taxiiCollections) {
         this.enterpriseAttackURL = eAttackURL;
         this.pre_attack_URL = preAttackURL;
         this.mobileDataURL = mURL;
@@ -40,16 +41,16 @@ export class DataService {
         this.taxiiCollections = taxiiCollections;
     }
 
-    getConfig(refresh:boolean = false){
-        if (refresh || !this.configData$){
+    getConfig(refresh: boolean = false) {
+        if (refresh || !this.configData$) {
             this.configData$ = this.http.get("./assets/config.json");
         }
         return this.configData$;
     }
 
-    getEnterpriseData(refresh: boolean = false, useTAXIIServer: boolean = false){
+    getEnterpriseData(refresh: boolean = false, useTAXIIServer: boolean = false) {
         if (useTAXIIServer) {
-            console.log("fetching data from TAXII server") 
+            console.log("fetching data from TAXII server")
             let conn = new TaxiiConnect(this.taxiiURL, '', '', 5000);
             let enterpriseCollectionInfo: any = {
                 'id': this.taxiiCollections['enterprise_attack'],
@@ -77,7 +78,7 @@ export class DataService {
                 fromPromise(preattackCollection.getObjects('', undefined))
             )
         }
-        else if (refresh || !this.enterpriseData$){
+        else if (refresh || !this.enterpriseData$) {
             this.enterpriseData$ = Observable.forkJoin(
                 this.http.get(this.enterpriseAttackURL),
                 this.http.get(this.pre_attack_URL)
@@ -86,7 +87,7 @@ export class DataService {
         return this.enterpriseData$ //observable
     }
 
-    getMobileData(refresh: boolean = false, useTAXIIServer: boolean = false){
+    getMobileData(refresh: boolean = false, useTAXIIServer: boolean = false) {
         //load from remote if not yet loaded or refresh=true
         if (useTAXIIServer) {
             console.log("fetching data from TAXII server")
@@ -117,7 +118,7 @@ export class DataService {
                 fromPromise(preattackCollection.getObjects('', undefined))
             )
         }
-        else if (refresh || !this.mobileData$){
+        else if (refresh || !this.mobileData$) {
             this.mobileData$ = Observable.forkJoin(
                 this.http.get(this.mobileDataURL),
                 this.http.get(this.pre_attack_URL)
@@ -126,12 +127,12 @@ export class DataService {
         return this.mobileData$ //observable
     }
 
-    setTacticOrder(retrievedTactics){
+    setTacticOrder(retrievedTactics) {
         // this.totalTacticsOrder = retrievedTactics;
-        for(var i = 0; i < retrievedTactics.length; i++){
+        for (var i = 0; i < retrievedTactics.length; i++) {
             var phase = retrievedTactics[i].phase;
             var tactic = retrievedTactics[i].tactic;
-            if(phase.localeCompare("prepare") === 0){
+            if (phase.localeCompare("prepare") === 0) {
                 this.prepareTacticsOrder.push(tactic);
             } else {
                 this.actTacticsOrder.push(tactic);
@@ -148,7 +149,7 @@ export class DataService {
     techniquesToTactics(techniques: Technique[]) {
         if (techniques.length === 0) return []
         var tactics = {};
-        techniques.forEach(function(technique) {
+        techniques.forEach(function (technique) {
             var tt = technique.tactic;
             if (tactics[tt]) tactics[tt].push(technique)
             else tactics[tt] = [technique];
@@ -166,17 +167,36 @@ export class DataService {
         if (techniques.length === 0) return []
         var techniquesFinal: String[] = [];
         var seen = new Set();
-        techniques.forEach(function(technique) {
+        techniques.forEach(function (technique) {
             var tt = technique.tactic;
             seen.add(tt);
         });
-        for(var i = 0; i < this.totalTacticsOrder.length; i++){
+        for (var i = 0; i < this.totalTacticsOrder.length; i++) {
             var tactic = this.totalTacticsOrder[i];
-            if(seen.has(tactic)){
+            if (seen.has(tactic)) {
                 techniquesFinal.push(tactic);
             }
         }
         return techniquesFinal;
+    }
+
+    saveFile(filename: String, json: any) {
+        const httpOptions: any = {
+            headers: new HttpHeaders({ 'Content-Type': 'application/json', }),
+            responseType: 'text'
+        }
+
+        this.http.post('layer/' + filename, json, httpOptions).subscribe((res: any) => {
+            if (res.error) { alert("Couldn't save file. Please store locally") }
+            else alert("Saved successfully");
+        });
+    }
+
+    deleteFile(filename: String) {
+        this.http.delete('layer/' + filename, { responseType: 'text' }).subscribe((res: any) => {
+            if (res.error) { alert("Couldn't delete file. Please contact admin") }
+            else alert("Deleted successfully");
+        });
     }
 }
 

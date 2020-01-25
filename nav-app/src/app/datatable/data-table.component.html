@@ -185,8 +185,6 @@
                  </div>
              </div>
 
-
-
             <!-- save locally as JSON -->
             <div *ngIf="configService.getFeature('download_layer')" class="control-row-item">
                 <div class="control-row-button noselect"
@@ -194,6 +192,26 @@
                     matTooltipPosition="below"
                     matTooltip="download layer as json">
                     <img src="assets/icons/ic_file_download_black_24px.svg" alt="save layer"/>
+                </div>
+            </div>
+
+            <!-- save globally as JSON -->
+            <div *ngIf="configService.getFeature('save_layer')" class="control-row-item">
+                <div class="control-row-button noselect"
+                    (click)="saveLayerGlobally()"
+                    matTooltipPosition="below"
+                    matTooltip="save layer on server">
+                    <img src="assets/icons/ic_save_black_24px.svg" alt="save layer"/>
+                </div>
+            </div> <!-- assets/icons/ic_clear_black_24px.svg -->
+                  
+            <!-- delete file from store -->
+            <div *ngIf="configService.getFeature('delete_layer')" class="control-row-item">
+                <div class="control-row-button noselect"
+                    (click)="deleteLayerGlobally()"
+                    matTooltipPosition="below"
+                    matTooltip="delete layer from server">
+                    <img src="assets/icons/ic_clear_black_24px.svg" alt="save layer"/>
                 </div>
             </div>
 

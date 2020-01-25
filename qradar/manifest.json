@@ -1,0 +1,17 @@
+{
+  "uuid": "5730dbd9-cc28-4eda-95e4-d228d9498244",
+  "description": "MITRE",
+  "version": "1.0",
+  "services": [{
+    "name": "MITRE_Service",
+    "version": "1.0"
+  }],
+  "areas": [{
+    "description": "MITRE Navigator",
+    "id": "MITRE_Navigator",
+    "required_capabilities": [],
+    "text": "MITRE Navigator",
+    "url": "/"
+  }],
+  "name": "MITRE Navigator"
+}

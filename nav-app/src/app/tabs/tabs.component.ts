@@ -91,13 +91,17 @@ export class TabsComponent implements AfterContentInit {
             }
 
             this.customizedConfig = this.configService.getFeatureList();
-            
+
             // Load all layers from the global store
             this.http.get('layers').subscribe((res: Array<String>) => {
                 res.forEach(matrix => {
                     this.loadLayerFromURL('layer/' + matrix, false);
+                    setTimeout(() => {
+                        this.dynamicTabs.sort((a, b) => (a.dataContext.name < b.dataContext.name ? -1 : 1));
+                    }, 5000); // wait 5 seconds until we reorder tabs alphabetically
                 });
             })
+
         });
     }
 
